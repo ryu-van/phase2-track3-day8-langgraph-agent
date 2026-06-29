@@ -47,6 +47,18 @@ def test_route_after_approval_rejected():
     assert route_after_approval({"approval": {"approved": False}}) == "clarify"
 
 
+def test_route_after_approval_decision_approve():
+    assert route_after_approval({"approval": {"decision": "approve"}}) == "tool"
+
+
+def test_route_after_approval_decision_reject():
+    assert route_after_approval({"approval": {"decision": "reject"}}) == "clarify"
+
+
+def test_route_after_approval_decision_edit():
+    assert route_after_approval({"approval": {"decision": "edit"}}) == "intake"
+
+
 def test_route_after_retry_within_limit():
     assert route_after_retry({"attempt": 0, "max_attempts": 3}) == "tool"
     assert route_after_retry({"attempt": 1, "max_attempts": 3}) == "tool"

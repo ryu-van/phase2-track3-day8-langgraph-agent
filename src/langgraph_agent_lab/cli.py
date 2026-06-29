@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 import json
 from pathlib import Path
 from typing import Annotated
@@ -50,6 +53,17 @@ def validate_metrics(metrics: Annotated[Path, typer.Option("--metrics")]) -> Non
     if report.total_scenarios < 6:
         raise typer.BadParameter("Expected at least 6 scenarios")
     typer.echo(f"Metrics valid. success_rate={report.success_rate:.2%}")
+
+
+@app.command("serve")
+def serve(
+    host: str = typer.Option("127.0.0.1", "--host", help="Host binding"),
+    port: int = typer.Option(8000, "--port", help="Port binding"),
+) -> None:
+    """Start the interactive testing web UI dashboard."""
+    import uvicorn
+    typer.echo(f"Starting web server on http://{host}:{port}")
+    uvicorn.run("langgraph_agent_lab.web:app", host=host, port=port, reload=True)
 
 
 if __name__ == "__main__":

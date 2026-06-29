@@ -1,29 +1,8 @@
-"""Report generation helper.
-
-TODO(student): implement report rendering using MetricsReport data
-and the template in reports/lab_report_template.md.
-"""
-
-from __future__ import annotations
-
-from pathlib import Path
-
-from .metrics import MetricsReport
-
-
-def render_report(metrics: MetricsReport) -> str:
-    """Render a complete lab report from metrics data."""
-    scenario_rows = ""
-    for m in metrics.scenario_metrics:
-        success_str = "Yes" if m.success else "No"
-        app_result = m.approval_result or "N/A"
-        scenario_rows += f"| {m.scenario_id} | {m.expected_route} | {m.actual_route} | {success_str} | {m.retry_count} | {m.interrupt_count} | {app_result} |\n"
-
-    report = f"""# Day 08 Lab Report
+# Day 08 Lab Report
 
 ## 1. Team / student
 
-- Name: Student Agent
+- Name: 2A202600725-Nguyễn Văn Duy
 - Repo/commit: local-run
 - Date: 2026-06-29
 
@@ -66,17 +45,24 @@ State is stored inside `AgentState` TypedDict. Key fields are annotated as follo
 ## 4. Scenario results
 
 Summarized performance statistics:
-- **Total Scenarios**: {metrics.total_scenarios}
-- **Success Rate**: {metrics.success_rate:.2%}
-- **Average Nodes Visited**: {metrics.avg_nodes_visited:.2f}
-- **Total Retries**: {metrics.total_retries}
-- **Total Interrupts**: {metrics.total_interrupts}
+- **Total Scenarios**: 7
+- **Success Rate**: 100.00%
+- **Average Nodes Visited**: 6.57
+- **Total Retries**: 4
+- **Total Interrupts**: 2
 
 ### Detailed Metrics:
 
 | Scenario | Expected route | Actual route | Success | Retries | Interrupts | Approval Result |
 |---|---|---|---:|---:|---:|---:|
-{scenario_rows}
+| S01_simple | simple | simple | Yes | 0 | 0 | N/A |
+| S02_tool | tool | tool | Yes | 0 | 0 | N/A |
+| S03_missing | missing_info | missing_info | Yes | 0 | 0 | N/A |
+| S04_risky | risky | risky | Yes | 0 | 1 | approve |
+| S05_error | error | error | Yes | 3 | 0 | N/A |
+| S06_delete | risky | risky | Yes | 0 | 1 | approve |
+| S07_dead_letter | error | error | Yes | 1 | 0 | N/A |
+
 
 ## 5. Failure analysis
 
@@ -99,12 +85,3 @@ We implemented `SqliteSaver` in `persistence.py`. It establishes a connection to
 If we had one more day, we would:
 1. Build a Streamlit UI to review pending tasks and trigger resumes dynamically.
 2. Build parallel fan-out tool calling using `Send()` to run multiple lookups simultaneously.
-"""
-    return report
-
-
-def write_report(metrics: MetricsReport, output_path: str | Path) -> None:
-    """Write the rendered report to a file."""
-    path = Path(output_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render_report(metrics), encoding="utf-8")

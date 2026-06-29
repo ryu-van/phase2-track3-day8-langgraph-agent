@@ -20,6 +20,7 @@ class ScenarioMetric(BaseModel):
     interrupt_count: int = 0
     approval_required: bool = False
     approval_observed: bool = False
+    approval_result: str | None = None
     latency_ms: int = 0
     errors: list[str] = Field(default_factory=list)
 
@@ -45,6 +46,14 @@ def metric_from_state(state: dict[str, Any], expected_route: str, approval_requi
     success = actual_route == expected_route and bool(state.get("final_answer") or state.get("pending_question"))
     if approval_required:
         success = success and approval is not None
+
+    approval_result_str = None
+    if approval:
+        if hasattr(approval, "decision"):
+            approval_result_str = approval.decision
+        elif isinstance(approval, dict):
+            approval_result_str = approval.get("decision", "approve" if approval.get("approved") else "reject")
+
     return ScenarioMetric(
         scenario_id=str(state.get("scenario_id", "unknown")),
         success=success,
@@ -55,6 +64,7 @@ def metric_from_state(state: dict[str, Any], expected_route: str, approval_requi
         interrupt_count=interrupt_count,
         approval_required=approval_required,
         approval_observed=approval is not None,
+        approval_result=approval_result_str,
         errors=list(errors),
     )
 

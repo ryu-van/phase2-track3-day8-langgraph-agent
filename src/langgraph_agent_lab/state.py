@@ -33,7 +33,9 @@ class LabEvent(BaseModel):
 
 
 class ApprovalDecision(BaseModel):
+    decision: str = "approve"  # "approve", "reject", "edit"
     approved: bool = False
+    edited_query: str | None = None
     reviewer: str = "mock-reviewer"
     comment: str = ""
 
@@ -53,6 +55,10 @@ class AgentState(TypedDict, total=False):
     attempt: int
     max_attempts: int
     final_answer: str | None
+    evaluation_result: str
+    pending_question: str
+    proposed_action: str
+    approval: ApprovalDecision | None
     # TODO(student): you will need additional fields for clarification, risky actions,
     # approval decisions, and retry-loop gating. Add them as you implement nodes.
     # Hint: check what your nodes return and what your routing functions read.

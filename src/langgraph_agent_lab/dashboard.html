@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangGraph Support Agent - Live Sandbox</title>
+    <!-- Modern Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-base: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-glass: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139, 92, 246, 0.3);
+            --primary-hover: #a78bfa;
+            
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.2);
+            --success-hover: #34d399;
+            
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.2);
+            --danger-hover: #f87171;
+            
+            --warning: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.2);
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --font-outfit: 'Outfit', sans-serif;
+            --font-inter: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-inter);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+        }
+
+        /* Premium Header Styling */
+        header {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-title h1 {
+            font-family: var(--font-outfit);
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 30%, var(--primary-hover) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .header-title p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        .badge-live {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid var(--primary);
+            color: var(--primary-hover);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .badge-live::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        /* Core Workspace Layout */
+        .workspace {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            flex-grow: 1;
+            height: calc(100vh - 75px);
+            overflow: hidden;
+        }
+
+        /* Sidebar Selector */
+        .sidebar {
+            background: rgba(30, 41, 59, 0.4);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .section-title {
+            font-family: var(--font-outfit);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Scenario Card design */
+        .scenario-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .scenario-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+        }
+
+        .scenario-card.active {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.05);
+            box-shadow: inset 0 0 10px rgba(139, 92, 246, 0.05);
+        }
+
+        .scenario-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scenario-id {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+
+        .scenario-card p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            margin-top: 0.25rem;
+        }
+
+        .tag {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .tag-risky { background: rgba(239, 68, 68, 0.1); color: var(--danger-hover); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .tag-simple { background: rgba(16, 185, 129, 0.1); color: var(--success-hover); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .tag-other { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.2); }
+
+        /* Main Sandbox Panel */
+        .main-content {
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Playground / Input Area */
+        .glass-panel {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .interactive-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .text-input {
+            flex-grow: 1;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.85rem 1.25rem;
+            color: var(--text-main);
+            font-family: var(--font-inter);
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .btn {
+            border-radius: 10px;
+            padding: 0.85rem 1.75rem;
+            font-family: var(--font-outfit);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--text-main);
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: var(--text-main);
+            box-shadow: 0 4px 14px var(--success-glow);
+        }
+
+        .btn-success:hover {
+            background: var(--success-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: var(--text-main);
+            box-shadow: 0 4px 14px var(--danger-glow);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Flow Visualizer */
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1.5rem 0.5rem;
+        }
+
+        .flow-node {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            font-family: var(--font-outfit);
+            font-size: 0.85rem;
+            font-weight: 600;
+            position: relative;
+            transition: var(--transition);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-node:hover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.08);
+        }
+
+        .flow-node.completed {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+            color: var(--success-hover);
+        }
+
+        .flow-node.interrupted {
+            border-color: var(--warning);
+            background: rgba(245, 158, 11, 0.05);
+            color: var(--warning);
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        .flow-arrow {
+            color: var(--text-muted);
+            font-weight: bold;
+            font-size: 1.2rem;
+            user-select: none;
+        }
+
+        /* Interrupt Review Card */
+        .interrupt-card {
+            border: 1px solid var(--warning);
+            background: rgba(245, 158, 11, 0.03);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            box-shadow: 0 8px 30px rgba(245, 158, 11, 0.05);
+            animation: slideDown 0.4s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .interrupt-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .interrupt-header .icon {
+            font-size: 1.5rem;
+        }
+
+        .interrupt-title {
+            font-family: var(--font-outfit);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--warning);
+        }
+
+        .interrupt-descr {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            background: rgba(15, 23, 42, 0.4);
+            padding: 0.85rem 1rem;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            border: 1px solid var(--border-color);
+        }
+
+        .interrupt-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .edit-query-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Split details grid */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .log-container {
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .log-item {
+            padding: 0.75rem;
+            border-radius: 8px;
+            background: var(--bg-surface);
+            border-left: 3px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .log-item.node-intake { border-left-color: var(--primary); }
+        .log-item.node-classify { border-left-color: #3b82f6; }
+        .log-item.node-tool { border-left-color: var(--success); }
+        .log-item.node-approval { border-left-color: var(--warning); }
+        .log-item.node-answer { border-left-color: #ec4899; }
+        .log-item.node-finalize { border-left-color: #a855f7; }
+
+        .log-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-node-name {
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .log-msg {
+            font-size: 0.8rem;
+            color: var(--text-main);
+            line-height: 1.4;
+            margin-top: 0.25rem;
+        }
+
+        /* JSON inspector */
+        .json-inspector {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            background: rgba(15, 23, 42, 0.8);
+            color: #38bdf8;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: auto;
+            max-height: 400px;
+            white-space: pre-wrap;
+        }
+
+        .json-inspector-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .json-inspector-title span {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        /* State Badge alerts */
+        .state-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .state-badge-active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .state-badge-finished { background: rgba(16, 185, 129, 0.15); color: var(--success-hover); }
+        .state-badge-paused { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1>LangGraph Support Agent live sandbox</h1>
+            <p>Interactive testing panel for Intent Classification, Evaluators, and human approvals</p>
+        </div>
+        <div class="badge-live">Live Sandbox Mode</div>
+    </header>
+
+    <div class="workspace">
+        <!-- Sidebar: Pre-configured Scenarios -->
+        <div class="sidebar">
+            <div>
+                <div class="section-title">🧪 Test scenarios</div>
+                <div id="scenarios-list">
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Loading scenarios...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="main-content">
+            <!-- Sandbox query inputs -->
+            <div class="glass-panel">
+                <div class="section-title">💬 Query sandbox playground</div>
+                <form id="sandbox-form" class="interactive-form" onsubmit="event.preventDefault(); startNewRun();">
+                    <div class="input-group">
+                        <label for="query-input">Enter User Support Ticket Query</label>
+                        <div class="input-row">
+                            <input type="text" id="query-input" class="text-input" placeholder="e.g. Can I please get a refund on order 4566?" required>
+                            <button type="submit" class="btn btn-primary">Start Execution</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Interruption Card (Human Review Panel) -->
+            <div id="interrupt-container" style="display: none;">
+                <div class="interrupt-card">
+                    <div class="interrupt-header">
+                        <span class="icon">⚠️</span>
+                        <div>
+                            <div class="interrupt-title">Human-in-the-Loop Interruption Triggered</div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted);">Risky execution guard paused the state. Choose a decision below to route the request.</p>
+                        </div>
+                    </div>
+                    <div class="interrupt-descr" id="interrupt-proposed-action">
+                        Proposed Action: Proceed with database deletion action.
+                    </div>
+                    <div class="interrupt-actions">
+                        <button class="btn btn-success" onclick="submitDecision('approve')">🟢 Approve & Execute Tool</button>
+                        <button class="btn btn-danger" onclick="submitDecision('reject')">🔴 Reject Request</button>
+                        <button class="btn" style="background: rgba(139, 92, 246, 0.2); border: 1px solid var(--primary); color: var(--primary-hover);" onclick="toggleEditContainer()">✍️ Edit & Re-evaluate Query</button>
+                    </div>
+                    <div id="edit-query-container" class="edit-query-container" style="display: none;">
+                        <label for="edited-query-input" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Modify Ticket Query</label>
+                        <div class="input-row">
+                            <input type="text" id="edited-query-input" class="text-input" placeholder="Edit the query text...">
+                            <button class="btn btn-primary" onclick="submitDecision('edit')">Submit Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trace Visualizer Card -->
+            <div class="glass-panel">
+                <div class="json-inspector-title">
+                    <div class="section-title">🛣️ Graph Node Execution path</div>
+                    <div id="status-badge" class="state-badge state-badge-active">Ready</div>
+                </div>
+                <div class="flow-container" id="flow-visualizer">
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">No runs executed yet.</span>
+                </div>
+            </div>
+
+            <!-- Details Section -->
+            <div class="details-grid">
+                <!-- Trace Logs -->
+                <div>
+                    <div class="section-title">📋 Node execution log events</div>
+                    <div class="log-container" id="execution-logs">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">Log is empty. Start a run above.</span>
+                    </div>
+                </div>
+
+                <!-- State Inspector -->
+                <div>
+                    <div class="json-inspector-title">
+                        <div class="section-title">🔍 State snapshot inspector</div>
+                    </div>
+                    <div class="json-inspector" id="json-viewer">{
+  "status": "No active state trace. Run a test to inspect state fields."
+}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentThreadId = null;
+        let activeScenarioId = null;
+
+        // Fetch pre-configured scenarios on load
+        async function fetchScenarios() {
+            try {
+                const res = await fetch('/api/scenarios');
+                const scenarios = await res.json();
+                
+                const list = document.getElementById('scenarios-list');
+                list.innerHTML = '';
+                
+                scenarios.forEach(s => {
+                    const card = document.createElement('div');
+                    card.className = `scenario-card ${activeScenarioId === s.id ? 'active' : ''}`;
+                    card.onclick = () => selectScenario(s);
+                    
+                    const tags = s.tags.map(t => {
+                        let cls = 'tag-other';
+                        if (t === 'hitl' || t === 'risky' || t === 'destructive') cls = 'tag-risky';
+                        if (t === 'simple') cls = 'tag-simple';
+                        return `<span class="tag ${cls}">${t}</span>`;
+                    }).join('');
+
+                    card.innerHTML = `
+                        <div class="scenario-card-header">
+                            <span class="scenario-id">${s.id}</span>
+                        </div>
+                        <p>${s.query}</p>
+                        <div class="tag-list">${tags}</div>
+                    `;
+                    list.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Failed to fetch scenarios:", err);
+            }
+        }
+
+        // Handle scenario click
+        function selectScenario(s) {
+            activeScenarioId = s.id;
+            document.querySelectorAll('.scenario-card').forEach(c => c.classList.remove('active'));
+            
+            // Mark active card
+            const cards = document.querySelectorAll('.scenario-card');
+            for(let card of cards) {
+                if(card.querySelector('.scenario-id').innerText === s.id) {
+                    card.classList.add('active');
+                }
+            }
+
+            document.getElementById('query-input').value = s.query;
+            startNewRun();
+        }
+
+        // Start new query run
+        async function startNewRun() {
+            const query = document.getElementById('query-input').value;
+            currentThreadId = "thread_" + Math.random().toString(36).substr(2, 9);
+            
+            // Hide interrupt overlay
+            document.getElementById('interrupt-container').style.display = 'none';
+            document.getElementById('edit-query-container').style.display = 'none';
+            
+            updateStatus("Running", "active");
+
+            try {
+                const res = await fetch('/api/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        thread_id: currentThreadId,
+                        query: query
+                    })
+                });
+                const data = await res.json();
+                renderTrace(data);
+            } catch (err) {
+                console.error(err);
+                updateStatus("Error", "paused");
+            }
+        }
+
+        // Toggle edit box
+        function toggleEditContainer() {
+            const container = document.getElementById('edit-query-container');
+            const isHidden = container.style.display === 'none';
+            container.style.display = isHidden ? 'flex' : 'none';
+            
+            if (isHidden) {
+                // Populate edit box with current query
+                const queryVal = document.getElementById('query-input').value;
+                document.getElementById('edited-query-input').value = queryVal;
+            }
+        }
+
+        // Submit Human decision
+        async function submitDecision(decision) {
+            let editedQuery = null;
+            if (decision === 'edit') {
+                editedQuery = document.getElementById('edited-query-input').value;
+                if (!editedQuery) return;
+                // Update top query input to reflect modifications
+                document.getElementById('query-input').value = editedQuery;
+            }
+
+            document.getElementById('interrupt-container').style.display = 'none';
+            document.getElementById('edit-query-container').style.display = 'none';
+            updateStatus("Resuming", "active");
+
+            try {
+                const res = await fetch('/api/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        thread_id: currentThreadId,
+                        decision: decision,
+                        edited_query: editedQuery
+                    })
+                });
+                const data = await res.json();
+                renderTrace(data);
+            } catch(err) {
+                console.error(err);
+                updateStatus("Error", "paused");
+            }
+        }
+
+        // Helper to update state badge
+        function updateStatus(text, statusClass) {
+            const badge = document.getElementById('status-badge');
+            badge.innerText = text;
+            badge.className = `state-badge state-badge-${statusClass}`;
+        }
+
+        // Render Graph nodes trace timeline
+        function renderTrace(data) {
+            const container = document.getElementById('flow-visualizer');
+            container.innerHTML = '';
+
+            const logs = document.getElementById('execution-logs');
+            logs.innerHTML = '';
+
+            // Handle rendering path nodes
+            const trace = data.trace || [];
+            if (trace.length === 0) {
+                container.innerHTML = '<span style="font-size: 0.85rem; color: var(--text-muted);">No path registered.</span>';
+                logs.innerHTML = '<span style="font-size: 0.85rem; color: var(--text-muted);">Log is empty.</span>';
+                return;
+            }
+
+            // Render flow nodes
+            trace.forEach((step, idx) => {
+                const nodeDiv = document.createElement('div');
+                nodeDiv.className = 'flow-node completed';
+                nodeDiv.innerText = step.node;
+                nodeDiv.onclick = () => inspectNodeSnapshot(step);
+                container.appendChild(nodeDiv);
+
+                if (idx < trace.length - 1) {
+                    const arrow = document.createElement('span');
+                    arrow.className = 'flow-arrow';
+                    arrow.innerText = '→';
+                    container.appendChild(arrow);
+                }
+            });
+
+            // If currently interrupted at approval
+            if (data.is_interrupted) {
+                const arrow = document.createElement('span');
+                arrow.className = 'flow-arrow';
+                arrow.innerText = '→';
+                container.appendChild(arrow);
+
+                const nodeDiv = document.createElement('div');
+                nodeDiv.className = 'flow-node interrupted';
+                nodeDiv.innerText = 'approval (paused)';
+                nodeDiv.onclick = () => inspectState(data.state);
+                container.appendChild(nodeDiv);
+
+                // Render interruption alert overlay
+                document.getElementById('interrupt-container').style.display = 'block';
+                document.getElementById('interrupt-proposed-action').innerText = data.proposed_action || "Proposed database modifications require review.";
+                updateStatus("Review Needed", "paused");
+            } else {
+                updateStatus("Finished", "finished");
+            }
+
+            // Render events logs
+            let eventsLogged = 0;
+            trace.forEach(step => {
+                const nodeWrites = step.writes || {};
+                const events = nodeWrites.events || [];
+                
+                events.forEach(evt => {
+                    eventsLogged++;
+                    const item = document.createElement('div');
+                    item.className = `log-item node-${step.node}`;
+                    
+                    item.innerHTML = `
+                        <div class="log-item-header">
+                            <span class="log-node-name" style="color: ${getNodeColor(step.node)}">${step.node}</span>
+                            <span style="font-size: 0.65rem; color: var(--text-muted);">${evt.type || 'info'}</span>
+                        </div>
+                        <div class="log-msg">${evt.message}</div>
+                    `;
+                    logs.appendChild(item);
+                });
+            });
+
+            if (eventsLogged === 0) {
+                logs.innerHTML = '<span style="font-size: 0.85rem; color: var(--text-muted);">No log events written by nodes.</span>';
+            }
+
+            // Render final state in inspector
+            inspectState(data.state);
+        }
+
+        // Color helper
+        function getNodeColor(node) {
+            switch(node) {
+                case 'intake': return '#8b5cf6';
+                case 'classify': return '#3b82f6';
+                case 'tool': return '#10b981';
+                case 'approval': return '#f59e0b';
+                case 'answer': return '#ec4899';
+                default: return '#94a3b8';
+            }
+        }
+
+        // View specific node values
+        function inspectNodeSnapshot(step) {
+            const viewer = document.getElementById('json-viewer');
+            viewer.innerHTML = `<span style="color: #94a3b8">// Snapshot values generated at node [${step.node}]</span>\n` + JSON.stringify(step.writes, null, 2);
+        }
+
+        // Render full state JSON
+        function inspectState(state) {
+            const viewer = document.getElementById('json-viewer');
+            viewer.innerHTML = `<span style="color: #94a3b8">// Current thread AgentState values</span>\n` + JSON.stringify(state, null, 2);
+        }
+
+        // Initialize scenarios list on load
+        fetchScenarios();
+    </script>
+</body>
+</html>
